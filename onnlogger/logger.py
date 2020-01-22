@@ -2,13 +2,15 @@ import logging
 import os
 from base64 import b64encode
 
-PRINT_LOG_LEVELS = ['info', 'warning', 'error', 'critical']
+PRINT_LOG_LEVELS = ['INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
 class Loggers:
     def __init__(self, logger_name, console_logger=False, print_logger=False, log_level='INFO', log_file_path=''):
-        if log_level.lower() == 'debug':
-            PRINT_LOG_LEVELS.append('debug')
+        log_level = log_level.upper()
+
+        if log_level == 'DEBUG':
+            PRINT_LOG_LEVELS.append('DEBUG')
 
         if log_file_path:
             log_dir = os.path.dirname(log_file_path)
@@ -37,7 +39,7 @@ class Loggers:
 
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG)
-        console_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',
+        console_format = logging.Formatter('%(asctime)s - %(levelname)s - %(hostname)s - %(message)s',
                                            datefmt='%d-%b-%y %H:%M:%S')
         console_handler.setFormatter(console_format)
         console_log.addHandler(console_handler)
@@ -58,15 +60,17 @@ class Loggers:
         file_handler.setLevel(logging.DEBUG)
         # file_format = logging.Formatter('["%(asctime)s","%(levelname)s","%(message)s"]',
         #                                 datefmt='%d-%b-%y %H:%M:%S')
-        file_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s',
+        file_format = logging.Formatter('%(asctime)s - %(levelname)s - %(hostname)s - %(message)s',
                                         datefmt='%d-%b-%y %H:%M:%S')
         file_handler.setFormatter(file_format)
         file_log.addHandler(file_handler)
 
         return file_log
 
-    def entry(self, level, msg, to_base64=False, hide_base64=True, replace_newlines=True, replace_json=False):
-        if self.print_logger and level in PRINT_LOG_LEVELS:
+    def entry(self, level, msg, hostname='system', to_base64=False, hide_base64=True, replace_newlines=True,
+              replace_json=False):
+
+        if self.print_logger and level.upper() in PRINT_LOG_LEVELS:
             print(f'{level.upper()} - {msg}')
 
         for handler in self.log_handlers:
@@ -89,4 +93,6 @@ class Loggers:
                         if replace_newlines:
                             msg = msg.replace('\n', ' ')
 
-            log_level(msg)
+            add_hostname = {'hostname': hostname}
+            log_level(msg, extra=add_hostname)
+
