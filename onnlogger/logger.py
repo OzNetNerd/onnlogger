@@ -6,8 +6,10 @@ PRINT_LOG_LEVELS = ['INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
 class Loggers:
-    def __init__(self, logger_name, console_logger=False, print_logger=False, log_level='INFO', log_file_path=''):
+    def __init__(self, logger_name, console_logger=False, print_logger=False, log_level='INFO', log_file_path='',
+                 log_file_json=False):
         log_level = log_level.upper()
+        self.log_file_json = log_file_json
 
         if log_level == 'DEBUG':
             PRINT_LOG_LEVELS.append('DEBUG')
@@ -23,7 +25,8 @@ class Loggers:
 
         self.print_logger = print_logger
         self.console_logger = self.enable_console_logger(logger_name, log_level) if console_logger else False
-        self.file_logger = self.enable_file_logger(logger_name, log_level, log_file_path) if log_file_path else False
+        self.file_logger = self.enable_file_logger(logger_name, log_level, log_file_path, self.log_file_json) \
+            if log_file_path else False
 
         logger_types = [self.console_logger, self.file_logger]
         self.log_handlers = [logger_type for logger_type in logger_types if logger_type]
@@ -47,7 +50,7 @@ class Loggers:
         return console_log
 
     @staticmethod
-    def enable_file_logger(logger_name, log_level, log_file_path):
+    def enable_file_logger(logger_name, log_level, log_file_path, log_file_json):
         logger_name = f'file-{logger_name}'
 
         if not os.path.exists(log_file_path):
@@ -58,10 +61,15 @@ class Loggers:
 
         file_handler = logging.FileHandler(log_file_path)
         file_handler.setLevel(logging.DEBUG)
-        # file_format = logging.Formatter('["%(asctime)s","%(levelname)s","%(message)s"]',
-        #                                 datefmt='%d-%b-%y %H:%M:%S')
-        file_format = logging.Formatter('%(asctime)s - %(levelname)s - %(hostname)s - %(message)s',
-                                        datefmt='%d-%b-%y %H:%M:%S')
+
+        if log_file_json:
+            file_format = logging.Formatter('["%(asctime)s","%(levelname)s", "%(hostname)s", "%(message)s"]',
+                                            datefmt='%d-%b-%y %H:%M:%S')
+
+        else:
+            file_format = logging.Formatter('%(asctime)s - %(levelname)s - %(hostname)s - %(message)s',
+                                            datefmt='%d-%b-%y %H:%M:%S')
+
         file_handler.setFormatter(file_format)
         file_log.addHandler(file_handler)
 
@@ -69,6 +77,10 @@ class Loggers:
 
     def entry(self, level, msg, hostname='system', to_base64=False, hide_base64=True, replace_newlines=True,
               replace_json=False):
+
+        # escape replace double quotes (") with single quotes (') when logging JSON output to file
+        if self.log_file_json:
+            replace_json = True
 
         if self.print_logger and level.upper() in PRINT_LOG_LEVELS:
             print(f'{level.upper()} - {msg}')
