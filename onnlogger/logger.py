@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 from base64 import b64encode
 
 PRINT_LOG_LEVELS = ['INFO', 'WARNING', 'ERROR', 'CRITICAL']
@@ -18,7 +19,7 @@ class Loggers:
             log_dir = os.path.dirname(log_file_path)
 
             if not os.path.isdir(log_dir):
-                os.mkdir(log_dir)
+                pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
 
             elif os.path.exists(log_file_path):
                 os.remove(log_file_path)
